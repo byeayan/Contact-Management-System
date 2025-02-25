@@ -50,7 +50,7 @@ public class EditContactPage {
         gbc.gridx = 1; gbc.gridy = 2; gbc.gridwidth = 2; panel.add(phoneField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1; panel.add(emailLabel, gbc);
-        gbc.gridx = 1; gbc.gridy = 3; gbc.gridwidth = 2; panel.add(emailField, gbc);
+        gbc.gridx = 1; gbc.gridy = 3; gbc.gridwidth = 9; panel.add(emailField, gbc);
 
         gbc.gridx = 1; gbc.gridy = 4; gbc.gridwidth = 1; panel.add(updateButton, gbc);
 
@@ -101,12 +101,37 @@ public class EditContactPage {
     }
 
     private void updateContact() {
-        if (nameField.getText().isEmpty() || phoneField.getText().isEmpty() || emailField.getText().isEmpty()) {
+        String oldName = searchField.getText().trim();
+        String newName = nameField.getText().trim();
+        String newPhone = phoneField.getText().trim();
+        String newEmail = emailField.getText().trim();
+
+        if (newName.isEmpty() || newPhone.isEmpty() || newEmail.isEmpty()) {
             JOptionPane.showMessageDialog(null, "All fields must be filled!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        JOptionPane.showMessageDialog(null, "Contact updated successfully!");
+
+        String updateSQL = "UPDATE contacts SET name = ?, phone = ?, email = ? WHERE name = ?";
+
+        try (Connection conn = DatabaseConnector.connect();
+             PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
+            stmt.setString(1, newName);
+            stmt.setString(2, newPhone);
+            stmt.setString(3, newEmail);
+            stmt.setString(4, oldName);
+
+            int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                JOptionPane.showMessageDialog(null, "Contact updated successfully!");
+            } else {
+                JOptionPane.showMessageDialog(null, "Contact not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Error updating contact: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
+
 
     private JLabel createPixelLabel(String text) {
         JLabel label = new JLabel(text);
