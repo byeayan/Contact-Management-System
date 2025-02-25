@@ -2,17 +2,21 @@ package ContactManagementSystem;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
 
 public class ViewContactsPage {
+    private JFrame frame;
+    private JTable table;
+    private DefaultTableModel tableModel;
+
     public ViewContactsPage() {
         // Create frame with 8-bit look
-        JFrame frame = new JFrame("📜 VIEW CONTACTS 📜");
+        frame = new JFrame("📜 VIEW CONTACTS 📜");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setSize(700, 500);
         frame.getContentPane().setBackground(new Color(24, 20, 37)); // Dark 8-bit background
@@ -20,13 +24,10 @@ public class ViewContactsPage {
         // Header font
         Font headerFont = new Font("Monospaced", Font.BOLD, 16);
 
-        // Table columns and data
+        // Table columns
         String[] columns = {"ID", "NAME", "PHONE", "EMAIL"};
-        ArrayList<String[]> data = fetchContactsFromDatabase();
-        String[][] tableData = data.toArray(new String[0][]);
-
-        // Create table
-        JTable table = new JTable(tableData, columns);
+        tableModel = new DefaultTableModel(columns, 0);
+        table = new JTable(tableModel);
         table.setFont(new Font("Monospaced", Font.BOLD, 14)); // Pixel font
         table.setBackground(new Color(214, 210, 196)); // Retro beige
         table.setForeground(Color.BLACK);
@@ -59,26 +60,27 @@ public class ViewContactsPage {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBackground(new Color(24, 20, 37));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(backButton, BorderLayout.SOUTH);
 
         frame.add(panel);
-
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+
+        // Load contacts into table
+        refreshTable();
     }
 
-    // Fetch contacts from the database
-    private ArrayList<String[]> fetchContactsFromDatabase() {
-        ArrayList<String[]> contacts = new ArrayList<>();
+    // Fetch contacts from the database and update the table
+    private void refreshTable() {
+        tableModel.setRowCount(0); // Clear existing data
         String querySQL = "SELECT * FROM contacts";
         try (Connection conn = DatabaseConnector.connect();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(querySQL)) {
             while (rs.next()) {
-                contacts.add(new String[]{
-                        String.valueOf(rs.getInt("id")),
+                tableModel.addRow(new Object[]{
+                        rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("phone"),
                         rs.getString("email")
@@ -87,7 +89,6 @@ public class ViewContactsPage {
         } catch (Exception e) {
             System.out.println("ERROR: " + e.getMessage());
         }
-        return contacts;
     }
 
     // Helper method to create pixel-style buttons
