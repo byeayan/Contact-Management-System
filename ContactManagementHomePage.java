@@ -10,19 +10,18 @@ public class ContactManagementHomePage {
         // Initialize database
         initializeDatabase();
 
-        // Create the main frame
+        // the main frame
         JFrame frame = new JFrame("CONTACT MANAGEMENT");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 400);
         frame.setLayout(new BorderLayout());
 
-        // Set 8-bit style background color
-        frame.getContentPane().setBackground(new Color(24, 20, 37)); // Darker pixelated look
+        // 8-bit style background color
+        frame.getContentPane().setBackground(new Color(24, 20, 37));
 
-        // Load a pixelated font
         Font pixelFont = new Font("Monospaced", Font.BOLD, 18);
 
-        // Title panel with search icon
+        // search icon
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         titlePanel.setBackground(new Color(24, 20, 37));
 
