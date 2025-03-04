@@ -6,6 +6,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.util.regex.Pattern;
 
 public class AddContactPage {
     private JTextField nameField, phoneField, emailField;
@@ -34,6 +35,17 @@ public class AddContactPage {
         emailField = createPixelTextField();
         saveButton = createPixelButton("SAVE");
 
+        // Add constraints for phone number (digits only, max length 10)
+        phoneField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isDigit(c) || phoneField.getText().length() >= 10) {
+                    e.consume(); // Ignore input if not a digit or length exceeds 10
+                }
+            }
+        });
+
         gbc.gridx = 0; gbc.gridy = 0; panel.add(nameLabel, gbc);
         gbc.gridx = 1; gbc.gridy = 0; gbc.gridwidth = 2; panel.add(nameField, gbc);
         gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1; panel.add(phoneLabel, gbc);
@@ -46,13 +58,25 @@ public class AddContactPage {
             String name = nameField.getText().trim();
             String phone = phoneField.getText().trim();
             String email = emailField.getText().trim();
-            if (!name.isEmpty() && !phone.isEmpty() && !email.isEmpty()) {
-                addContactToDatabase(name, phone, email);
-                JOptionPane.showMessageDialog(frame, "CONTACT SAVED!");
-                frame.dispose();
-            } else {
+
+            if (name.isEmpty() || phone.isEmpty() || email.isEmpty()) {
                 JOptionPane.showMessageDialog(frame, "FILL ALL FIELDS!", "ERROR", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+
+            if (phone.length() != 10) {
+                JOptionPane.showMessageDialog(frame, "PHONE NUMBER MUST BE 10 DIGITS!", "ERROR", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                JOptionPane.showMessageDialog(frame, "INVALID EMAIL FORMAT!", "ERROR", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            addContactToDatabase(name, phone, email);
+            JOptionPane.showMessageDialog(frame, "CONTACT SAVED!");
+            frame.dispose();
         });
 
         frame.add(panel);
@@ -71,6 +95,11 @@ public class AddContactPage {
         } catch (Exception e) {
             System.out.println("ERROR: " + e.getMessage());
         }
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        return Pattern.matches(emailRegex, email);
     }
 
     private JLabel createPixelLabel(String text) {
