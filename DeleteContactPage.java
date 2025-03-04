@@ -2,10 +2,12 @@ package ContactManagementSystem;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DeleteContactPage {
     private JTextField nameField;
@@ -37,9 +39,29 @@ public class DeleteContactPage {
         deleteButton.addActionListener(e -> {
             String name = nameField.getText().trim();
             if (!name.isEmpty()) {
-                deleteContactFromDatabase(name);
-                JOptionPane.showMessageDialog(frame, "CONTACT DELETED!");
-                frame.dispose();
+                List<String[]> contacts = getContactsByName(name);
+                if (contacts.isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "NO CONTACT FOUND WITH THAT NAME.", "ERROR", JOptionPane.ERROR_MESSAGE);
+                } else if (contacts.size() == 1) {
+                    deleteContactFromDatabase(contacts.get(0)[1]); // Delete using phone number
+                    JOptionPane.showMessageDialog(frame, "CONTACT DELETED!");
+                    frame.dispose();
+                } else {
+                    String[] options = new String[contacts.size()];
+                    for (int i = 0; i < contacts.size(); i++) {
+                        options[i] = contacts.get(i)[0] + " (" + contacts.get(i)[1] + ")";
+                    }
+                    String selected = (String) JOptionPane.showInputDialog(
+                            frame, "MULTIPLE CONTACTS FOUND. CHOOSE WHICH TO DELETE:",
+                            "SELECT CONTACT", JOptionPane.QUESTION_MESSAGE,
+                            null, options, options[0]);
+                    if (selected != null) {
+                        String selectedPhone = selected.substring(selected.indexOf("(") + 1, selected.indexOf(")"));
+                        deleteContactFromDatabase(selectedPhone);
+                        JOptionPane.showMessageDialog(frame, "CONTACT DELETED!");
+                        frame.dispose();
+                    }
+                }
             } else {
                 JOptionPane.showMessageDialog(frame, "PLEASE ENTER A NAME.", "ERROR", JOptionPane.ERROR_MESSAGE);
             }
@@ -50,17 +72,30 @@ public class DeleteContactPage {
         frame.setVisible(true);
     }
 
-    private void deleteContactFromDatabase(String name) {
-        String deleteSQL = "DELETE FROM contacts WHERE name = ?";
+    private List<String[]> getContactsByName(String name) {
+        List<String[]> contacts = new ArrayList<>();
+        String query = "SELECT name, phone FROM contacts WHERE name = ?";
         try (Connection conn = DatabaseConnector.connect();
-             PreparedStatement stmt = conn.prepareStatement(deleteSQL)) {
+             PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, name);
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                JOptionPane.showMessageDialog(null, "NO CONTACT FOUND WITH THAT NAME.", "ERROR", JOptionPane.ERROR_MESSAGE);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                contacts.add(new String[]{rs.getString("name"), rs.getString("phone")});
             }
         } catch (Exception e) {
-            System.out.println("Error deleting contact: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return contacts;
+    }
+
+    private void deleteContactFromDatabase(String phone) {
+        String deleteSQL = "DELETE FROM contacts WHERE phone = ?";
+        try (Connection conn = DatabaseConnector.connect();
+             PreparedStatement stmt = conn.prepareStatement(deleteSQL)) {
+            stmt.setString(1, phone);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
