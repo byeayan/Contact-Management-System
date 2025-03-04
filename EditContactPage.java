@@ -27,7 +27,7 @@ public class EditContactPage {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1;
 
-        JLabel searchLabel = createPixelLabel("SEARCH NAME:");
+        JLabel searchLabel = createPixelLabel("SEARCH PHONE:");
         searchField = createPixelTextField();
         searchButton = createPixelButton("SEARCH");
 
@@ -47,7 +47,7 @@ public class EditContactPage {
         gbc.gridx = 1; gbc.gridy = 1; gbc.gridwidth = 2; panel.add(nameField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1; panel.add(phoneLabel, gbc);
-        gbc.gridx = 1; gbc.gridy = 2; gbc.gridwidth = 2; panel.add(phoneField, gbc);
+        gbc.gridx = 1; gbc.gridy = 2; gbc.gridwidth = 9; panel.add(phoneField, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1; panel.add(emailLabel, gbc);
         gbc.gridx = 1; gbc.gridy = 3; gbc.gridwidth = 9; panel.add(emailField, gbc);
@@ -66,9 +66,11 @@ public class EditContactPage {
         });
 
         phoneField.addKeyListener(new KeyAdapter() {
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    updateButton.doClick();
+            @Override
+            public void keyTyped(KeyEvent e) {
+                char c = e.getKeyChar();
+                if (!Character.isDigit(c) || phoneField.getText().length() >= 10) {
+                    e.consume(); // Ignore input if not a digit or length exceeds 10
                 }
             }
         });
@@ -79,15 +81,17 @@ public class EditContactPage {
     }
 
     private void searchContact() {
-        String searchName = searchField.getText().trim();
-        if (searchName.isEmpty()) {
+        String searchPhone = searchField.getText().trim();
+        if (searchPhone.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Search field is empty!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         try (Connection conn = DatabaseConnector.connect();
-             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM contacts WHERE name = ?")) {
-            stmt.setString(1, searchName);
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM contacts WHERE phone = ?")) {
+            stmt.setString(1, searchPhone);
             ResultSet rs = stmt.executeQuery();
+
             if (rs.next()) {
                 nameField.setText(rs.getString("name"));
                 phoneField.setText(rs.getString("phone"));
@@ -101,7 +105,7 @@ public class EditContactPage {
     }
 
     private void updateContact() {
-        String oldName = searchField.getText().trim();
+        String oldPhone = searchField.getText().trim();
         String newName = nameField.getText().trim();
         String newPhone = phoneField.getText().trim();
         String newEmail = emailField.getText().trim();
@@ -111,14 +115,19 @@ public class EditContactPage {
             return;
         }
 
-        String updateSQL = "UPDATE contacts SET name = ?, phone = ?, email = ? WHERE name = ?";
+        if (!isValidEmail(newEmail)) {
+            JOptionPane.showMessageDialog(null, "Invalid email format!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String updateSQL = "UPDATE contacts SET name = ?, phone = ?, email = ? WHERE phone = ?";
 
         try (Connection conn = DatabaseConnector.connect();
              PreparedStatement stmt = conn.prepareStatement(updateSQL)) {
             stmt.setString(1, newName);
             stmt.setString(2, newPhone);
             stmt.setString(3, newEmail);
-            stmt.setString(4, oldName);
+            stmt.setString(4, oldPhone);
 
             int rowsAffected = stmt.executeUpdate();
 
@@ -132,6 +141,10 @@ public class EditContactPage {
         }
     }
 
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+        return email.matches(emailRegex);
+    }
 
     private JLabel createPixelLabel(String text) {
         JLabel label = new JLabel(text);
