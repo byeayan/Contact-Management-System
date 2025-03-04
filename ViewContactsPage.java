@@ -26,13 +26,22 @@ public class ViewContactsPage {
 
         // Table columns
         String[] columns = {"ID", "NAME", "PHONE", "EMAIL"};
-        tableModel = new DefaultTableModel(columns, 0);
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Make table read-only
+            }
+        };
+
         table = new JTable(tableModel);
         table.setFont(new Font("Monospaced", Font.BOLD, 14)); // Pixel font
         table.setBackground(new Color(214, 210, 196)); // Retro beige
         table.setForeground(Color.BLACK);
         table.setGridColor(Color.BLACK);
         table.setRowHeight(30);
+        table.setFocusable(false);
+        table.setRowSelectionAllowed(false); // Disable row selection
+        table.getTableHeader().setReorderingAllowed(false); // Prevent column reordering
 
         // Center cell content
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
