@@ -3,17 +3,23 @@ package ContactManagementSystem;
 import javax.swing.*;
 import java.awt.*;
 
-import static ContactManagementSystem.DatabaseConnector.initializeDatabase;
+import static ContactManagementSystem.DatabaseConnector.initializeDatabase; // Ensure this is imported
 
 public class ContactManagementHomePage {
-    public static void main(String[] args) {
-        // Initialize database
+    private String username;
+    private String role;
+
+    public ContactManagementHomePage(String username, String role) {
+        this.username = username;
+        this.role = role;
+
+        // Initialize database correctly
         initializeDatabase();
 
-        // the main frame
-        JFrame frame = new JFrame("CONTACT MANAGEMENT");
+        // Create the main frame
+        JFrame frame = new JFrame("CONTACT MANAGEMENT - " + username + " (" + role + ")");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 400);
+        frame.setSize(600, 500);
         frame.setLayout(new BorderLayout());
 
         // 8-bit style background color
@@ -21,7 +27,7 @@ public class ContactManagementHomePage {
 
         Font pixelFont = new Font("Monospaced", Font.BOLD, 18);
 
-        // search icon
+        // Title panel
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         titlePanel.setBackground(new Color(24, 20, 37));
 
@@ -38,8 +44,9 @@ public class ContactManagementHomePage {
 
         frame.add(titlePanel, BorderLayout.NORTH);
 
+        // Center Panel (Main Options)
         JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new GridLayout(5, 1, 10, 10));
+        centerPanel.setLayout(new GridLayout(role.equals("admin") ? 7 : 6, 1, 10, 10)); // Admins have extra option
         centerPanel.setBorder(BorderFactory.createEmptyBorder(50, 100, 80, 100));
         centerPanel.setBackground(new Color(46, 34, 59));
 
@@ -47,19 +54,38 @@ public class ContactManagementHomePage {
         JButton editContactButton = createPixelButton("EDIT CONTACT");
         JButton viewContactsButton = createPixelButton("VIEW CONTACTS");
         JButton deleteContactButton = createPixelButton("DELETE CONTACT");
+        JButton logoutButton = createPixelButton("LOGOUT");
         JButton exitButton = createPixelButton("EXIT");
+        JButton viewLogsButton = createPixelButton("VIEW LOGIN ACTIVITY"); // Only for Admins
 
         centerPanel.add(addContactButton);
         centerPanel.add(editContactButton);
         centerPanel.add(viewContactsButton);
         centerPanel.add(deleteContactButton);
+        if (role.equals("admin")) {
+            centerPanel.add(viewLogsButton); // Only Admins can see login logs
+        }
+        centerPanel.add(logoutButton);
         centerPanel.add(exitButton);
         frame.add(centerPanel, BorderLayout.SOUTH);
 
+        // Button Actions
         addContactButton.addActionListener(e -> new AddContactPage());
         viewContactsButton.addActionListener(e -> new ViewContactsPage());
         deleteContactButton.addActionListener(e -> new DeleteContactPage());
         editContactButton.addActionListener(e -> new EditContactPage());
+
+        // Admin-only action: View Login Activity
+        viewLogsButton.addActionListener(e -> showLoginActivity());
+
+        // Logout Button - Goes back to login screen
+        logoutButton.addActionListener(e -> {
+            JOptionPane.showMessageDialog(frame, "Logged out successfully!");
+            frame.dispose();
+            new LoginFrame().setVisible(true);
+        });
+
+        // Exit Confirmation
         exitButton.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(frame, "Are you sure you want to exit?", "Exit Confirmation", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
@@ -71,6 +97,23 @@ public class ContactManagementHomePage {
 
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    // ADMIN FUNCTION: View Login Activity
+    private void showLoginActivity() {
+        JFrame logFrame = new JFrame("Login Activity Logs");
+        logFrame.setSize(500, 300);
+        logFrame.setLayout(new BorderLayout());
+
+        JTextArea logTextArea = new JTextArea();
+        logTextArea.setEditable(false);
+        logTextArea.setText(DatabaseConnector.getLoginActivity());
+
+        JScrollPane scrollPane = new JScrollPane(logTextArea);
+        logFrame.add(scrollPane, BorderLayout.CENTER);
+
+        logFrame.setLocationRelativeTo(null);
+        logFrame.setVisible(true);
     }
 
     private static JButton createPixelButton(String text) {
